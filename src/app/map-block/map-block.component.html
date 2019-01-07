@@ -1,0 +1,6 @@
+<canvas #canvas (window:resize)="resizeCanvas($event)"
+        (mousedown)="startDragging($event)"
+        (mousemove)="!isDragged || continueDragging($event)"
+        (mouseup)="!isDragged || stopDragging($event)"
+        (mouseleave)="!isDragged || stopDragging($event)">
+</canvas>
