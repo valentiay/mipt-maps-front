@@ -2,5 +2,6 @@
         (mousedown)="startDragging($event)"
         (mousemove)="!isDragged || continueDragging($event)"
         (mouseup)="!isDragged || stopDragging($event)"
-        (mouseleave)="!isDragged || stopDragging($event)">
+        (mouseleave)="!isDragged || stopDragging($event)"
+        (wheel)="changeScale($event)">
 </canvas>

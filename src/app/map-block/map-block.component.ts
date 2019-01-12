@@ -1,7 +1,6 @@
 import {Component, ElementRef, Input, OnChanges, OnInit, ViewChild} from '@angular/core';
 import {ElemsService} from '../elems.service';
 import {Elem} from '../objects/Elem';
-import {Point} from '../objects/Point';
 
 @Component({
   selector: 'app-map-block',
@@ -19,6 +18,23 @@ export class MapBlockComponent implements OnInit {
 
   constructor(private elemsService: ElemsService) { }
 
+  ngOnInit() {
+    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
+    this.elemsService.getElems().subscribe((elems) => {
+      this.elems = elems;
+      this.resizeCanvas();
+      this.render(ctx);
+    });
+  }
+
+  private absoluteToCanvas(x: number, y: number): [number, number] {
+    return [(x + this.originX) * this.scale, (y + this.originY) * this.scale];
+  }
+
+  private canvasToAbsolute(x: number, y: number): [number, number] {
+    return [x / this.scale - this.originX, y / this.scale - this.originY];
+  }
+
   private render(ctx: CanvasRenderingContext2D) {
     ctx.clearRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
     this.elems.forEach((elem) =>
@@ -26,49 +42,52 @@ export class MapBlockComponent implements OnInit {
         const head = shape.points[0];
         const tail = shape.points.slice(1);
         ctx.beginPath();
-        ctx.moveTo(head.x + this.originX, head.y + this.originY);
-        tail.forEach((point) => ctx.lineTo(point.x + this.originX, point.y + this.originY));
-        ctx.lineTo(head.x + this.originX, head.y + this.originY);
+        let [x, y] = this.absoluteToCanvas(head.x, head.y);
+        ctx.moveTo(x, y);
+        tail.forEach((point) => {
+          [x, y] = this.absoluteToCanvas(point.x, point.y);
+          ctx.lineTo(x, y);
+        });
+        [x, y] = this.absoluteToCanvas(head.x, head.y);
+        ctx.lineTo(x, y);
         ctx.fillStyle = shape.color;
         ctx.fill();
       })
     );
   }
 
-  startDragging(event) {
-    console.log('started dragging');
-    this.isDragged = true;
-  }
-
-  continueDragging(event) {
-    console.log('continued dragging');
-    this.originX += event.movementX;
-    this.originY += event.movementY;
-    console.log(this.originX);
-    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
-    this.render(ctx);
-  }
-
-  stopDragging(event) {
-    this.isDragged = false;
-    console.log('stopped dragging');
-  }
-
   resizeCanvas() {
-    console.log('resizing');
     this.canvasRef.nativeElement.width  = this.canvasRef.nativeElement.parentElement.offsetWidth;
     this.canvasRef.nativeElement.height = this.canvasRef.nativeElement.parentElement.offsetHeight;
     const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
     this.render(ctx);
   }
 
-  ngOnInit() {
+
+  startDragging(event) {
+    this.isDragged = true;
+  }
+
+  continueDragging(event) {
+    this.originX += event.movementX / this.scale;
+    this.originY += event.movementY / this.scale;
     const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
-    this.elemsService.getElems().subscribe((elems) => {
-      this.elems = elems;
-      this.resizeCanvas();
-      console.log(elems);
-      this.render(ctx);
-    });
+    this.render(ctx);
+  }
+
+  stopDragging(event) {
+    this.isDragged = false;
+  }
+
+
+  changeScale(event) {
+    const oldScale = this.scale;
+    this.scale *= (window.innerHeight + event.wheelDeltaY) / window.innerHeight;
+    const scaleDiff = 1 / oldScale - 1 / this.scale;
+    // Maybe not event.clientX
+    this.originX = this.originX - event.clientX * scaleDiff;
+    this.originY = this.originY - event.clientY * scaleDiff;
+    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
+    this.render(ctx);
   }
 }

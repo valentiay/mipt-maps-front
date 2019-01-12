@@ -30,13 +30,12 @@ export class ElemsService {
       for (let j = 0; j < numShapes; j++) {
         const points: Point[] = [];
         for (let k = 0; k < numPoints; k++) {
-          points.push(new Point(Math.random() * 600, Math.random() * 600));
+          points.push(new Point(Math.random() * window.innerWidth, Math.random() * window.innerHeight));
         }
         shapes.push(new Shape(points, ElemsService.getRandomColor()));
       }
       elems.push(new Elem(i.toString(), shapes));
     }
-    console.log(elems);
     elems.forEach((elem) => this.elems.set(elem.id, elem));
   }
 
