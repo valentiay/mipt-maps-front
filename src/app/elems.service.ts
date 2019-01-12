@@ -20,21 +20,20 @@ export class ElemsService {
   }
 
   constructor() {
-    const numElements = 100;
-    const numShapes = 2;
-    const numPoints = 10;
+    const numElements = 500;
+    const maxNumPoints = 10;
+    const scatter = 100;
 
     const elems: Elem[] = [];
     for (let i = 0; i < numElements; i++) {
-      const shapes: Shape[] = [];
-      for (let j = 0; j < numShapes; j++) {
-        const points: Point[] = [];
-        for (let k = 0; k < numPoints; k++) {
-          points.push(new Point(Math.random() * window.innerWidth, Math.random() * window.innerHeight));
-        }
-        shapes.push(new Shape(points, ElemsService.getRandomColor()));
+      const numPoints = Math.random() * maxNumPoints;
+      const points: Point[] = [];
+      const baseX = Math.random() * window.innerWidth;
+      const baseY = Math.random() * window.innerHeight;
+      for (let k = 0; k < numPoints; k++) {
+        points.push(new Point(baseX + Math.random() * scatter - scatter / 2, baseY + Math.random() * scatter - scatter / 2));
       }
-      elems.push(new Elem(i.toString(), shapes));
+      elems.push(new Elem(i.toString(), [new Shape(points, ElemsService.getRandomColor())]));
     }
     elems.forEach((elem) => this.elems.set(elem.id, elem));
   }
