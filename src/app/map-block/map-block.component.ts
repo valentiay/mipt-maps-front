@@ -1,6 +1,8 @@
 import {Component, ElementRef, Input, OnChanges, OnInit, ViewChild} from '@angular/core';
 import {ElemsService} from '../elems.service';
 import {Elem} from '../objects/Elem';
+import {PointInfo} from '../objects/PointInfo';
+import {Point} from '../objects/Point';
 
 @Component({
   selector: 'app-map-block',
@@ -9,7 +11,6 @@ import {Elem} from '../objects/Elem';
 })
 export class MapBlockComponent implements OnInit {
   @ViewChild('canvas') canvasRef: ElementRef;
-  @ViewChild('pointer') pointerRef: ElementRef;
 
   scale = 1;
 
@@ -18,6 +19,7 @@ export class MapBlockComponent implements OnInit {
 
   pointerX: number;
   pointerY: number;
+  pointInfo: PointInfo;
 
   elems: Elem[];
 
@@ -27,11 +29,10 @@ export class MapBlockComponent implements OnInit {
   constructor(private elemsService: ElemsService) { }
 
   ngOnInit() {
-    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
     this.elemsService.getElems().subscribe((elems) => {
       this.elems = elems;
       this.resizeCanvas();
-      this.render(ctx);
+      this.render();
     });
   }
 
@@ -43,42 +44,58 @@ export class MapBlockComponent implements OnInit {
     return [x / this.scale - this.originX, y / this.scale - this.originY];
   }
 
-  private render(ctx: CanvasRenderingContext2D) {
+  private renderPoints(ctx, points: Point[], color: string, alpha: number = 1) {
+    const head = points[0];
+    const tail = points.slice(1);
+    ctx.beginPath();
+    let [x, y] = this.absoluteToCanvas(head.x, head.y);
+    ctx.moveTo(x, y);
+    tail.forEach((point) => {
+      [x, y] = this.absoluteToCanvas(point.x, point.y);
+      ctx.lineTo(x, y);
+    });
+    [x, y] = this.absoluteToCanvas(head.x, head.y);
+    ctx.lineTo(x, y);
+    const oldAlpha = ctx.globalAlpha;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.globalAlpha = oldAlpha;
+  }
+
+  private render() {
+    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
     ctx.clearRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
     this.elems.forEach((elem) =>
       elem.shapes.forEach((shape) => {
-        const head = shape.points[0];
-        const tail = shape.points.slice(1);
-        ctx.beginPath();
-        let [x, y] = this.absoluteToCanvas(head.x, head.y);
-        ctx.moveTo(x, y);
-        tail.forEach((point) => {
-          [x, y] = this.absoluteToCanvas(point.x, point.y);
-          ctx.lineTo(x, y);
-        });
-        [x, y] = this.absoluteToCanvas(head.x, head.y);
-        ctx.lineTo(x, y);
-        ctx.fillStyle = shape.color;
-        ctx.fill();
+        this.renderPoints(ctx, shape.points, shape.color);
       })
     );
+    if (this.pointInfo != null) {
+      this.renderPoints(ctx, this.pointInfo.highlightPoints, '#A00', 0.5);
+    }
   }
 
 
   resizeCanvas() {
     this.canvasRef.nativeElement.width  = this.canvasRef.nativeElement.parentElement.offsetWidth;
     this.canvasRef.nativeElement.height = this.canvasRef.nativeElement.parentElement.offsetHeight;
-    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
-    this.render(ctx);
+    this.render();
   }
 
 
   setPointer(event) {
     if (!this.isDragged) {
-      this.pointerX = event.clientX;
-      this.pointerY = event.clientY;
+      const [absX, absY] = this.canvasToAbsolute(event.clientX, event.clientY);
+      this.elemsService.getPointInfo(absX, absY).subscribe((pointInfo: PointInfo) => {
+        if (pointInfo != null) {
+          this.pointInfo = pointInfo;
+          [this.pointerX, this.pointerY] = this.absoluteToCanvas(absX, absY);
+        }
+      });
     }
     this.isDragged = false;
+    this.render();
   }
 
 
@@ -92,8 +109,7 @@ export class MapBlockComponent implements OnInit {
     this.originY += event.movementY / this.scale;
     this.pointerX += event.movementX;
     this.pointerY += event.movementY;
-    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
-    this.render(ctx);
+    this.render();
   }
 
   stopDragging(event) {
@@ -110,7 +126,6 @@ export class MapBlockComponent implements OnInit {
     this.originX = this.originX - event.clientX * scaleDiff;
     this.originY = this.originY - event.clientY * scaleDiff;
     [this.pointerX, this.pointerY] = this.absoluteToCanvas(oldPointerX, oldPointerY);
-    const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
-    this.render(ctx);
+    this.render();
   }
 }

@@ -3,6 +3,7 @@ import {Observable, of, EMPTY} from 'rxjs';
 import {Elem} from './objects/Elem';
 import {Shape} from './objects/Shape';
 import {Point} from './objects/Point';
+import {PointInfo} from './objects/PointInfo';
 
 @Injectable({
   providedIn: 'root'
@@ -20,9 +21,9 @@ export class ElemsService {
   }
 
   constructor() {
-    const numElements = 500;
-    const maxNumPoints = 6;
-    const scatter = 75;
+    const numElements = 100;
+    const maxNumPoints = 5;
+    const scatter = 200;
 
     const elems: Elem[] = [];
     for (let i = 0; i < numElements; i++) {
@@ -45,5 +46,21 @@ export class ElemsService {
 
   getElems(): Observable<Elem[]> {
     return of(Array.from(this.elems.values()));
+  }
+
+  getPointInfo(x: number, y: number): Observable<PointInfo> {
+    let nearestElem;
+    let shortestDistance = Number.POSITIVE_INFINITY;
+    this.elems.forEach((elem: Elem) => {
+      elem.shapes.forEach((shape: Shape) => {
+        shape.points.forEach((point: Point) => {
+          if (Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2) < shortestDistance) {
+            shortestDistance = Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2);
+            nearestElem = elem;
+          }
+        });
+      });
+    });
+    return of(new PointInfo(nearestElem, nearestElem.shapes[0].points));
   }
 }

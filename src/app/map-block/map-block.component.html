@@ -6,4 +6,4 @@
         (mouseleave)="!isMouseDown || stopDragging($event)"
         (wheel)="changeScale($event)">
 </canvas>
-<div #pointer *ngIf="pointerX && pointerY" [style.left]="pointerX + 'px'" [style.top]="pointerY + 'px'" class="pointer"></div>
+<div *ngIf="pointerX && pointerY" [style.left]="pointerX + 'px'" [style.top]="pointerY + 'px'" class="pointer"></div>
