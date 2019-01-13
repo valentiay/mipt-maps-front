@@ -9,11 +9,19 @@ import {Elem} from '../objects/Elem';
 })
 export class MapBlockComponent implements OnInit {
   @ViewChild('canvas') canvasRef: ElementRef;
+  @ViewChild('pointer') pointerRef: ElementRef;
+
   scale = 1;
+
   originX = 0;
   originY = 0;
+
+  pointerX: number;
+  pointerY: number;
+
   elems: Elem[];
 
+  isMouseDown: Boolean = false;
   isDragged: Boolean = false;
 
   constructor(private elemsService: ElemsService) { }
@@ -56,6 +64,7 @@ export class MapBlockComponent implements OnInit {
     );
   }
 
+
   resizeCanvas() {
     this.canvasRef.nativeElement.width  = this.canvasRef.nativeElement.parentElement.offsetWidth;
     this.canvasRef.nativeElement.height = this.canvasRef.nativeElement.parentElement.offsetHeight;
@@ -64,29 +73,43 @@ export class MapBlockComponent implements OnInit {
   }
 
 
+  setPointer(event) {
+    if (!this.isDragged) {
+      this.pointerX = event.clientX;
+      this.pointerY = event.clientY;
+    }
+    this.isDragged = false;
+  }
+
+
   startDragging(event) {
-    this.isDragged = true;
+    this.isMouseDown = true;
   }
 
   continueDragging(event) {
+    this.isDragged = true;
     this.originX += event.movementX / this.scale;
     this.originY += event.movementY / this.scale;
+    this.pointerX += event.movementX;
+    this.pointerY += event.movementY;
     const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
     this.render(ctx);
   }
 
   stopDragging(event) {
-    this.isDragged = false;
+    this.isMouseDown = false;
   }
 
 
   changeScale(event) {
     const oldScale = this.scale;
+    const [oldPointerX, oldPointerY] = this.canvasToAbsolute(this.pointerX, this.pointerY);
     this.scale *= (window.innerHeight + event.wheelDeltaY) / window.innerHeight;
     const scaleDiff = 1 / oldScale - 1 / this.scale;
     // Maybe not event.clientX
     this.originX = this.originX - event.clientX * scaleDiff;
     this.originY = this.originY - event.clientY * scaleDiff;
+    [this.pointerX, this.pointerY] = this.absoluteToCanvas(oldPointerX, oldPointerY);
     const ctx: CanvasRenderingContext2D = this.canvasRef.nativeElement.getContext('2d');
     this.render(ctx);
   }

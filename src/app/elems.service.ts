@@ -21,8 +21,8 @@ export class ElemsService {
 
   constructor() {
     const numElements = 500;
-    const maxNumPoints = 10;
-    const scatter = 100;
+    const maxNumPoints = 6;
+    const scatter = 75;
 
     const elems: Elem[] = [];
     for (let i = 0; i < numElements; i++) {

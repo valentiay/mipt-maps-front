@@ -1,7 +1,9 @@
 <canvas #canvas (window:resize)="resizeCanvas($event)"
+        (click)="setPointer($event)"
         (mousedown)="startDragging($event)"
-        (mousemove)="!isDragged || continueDragging($event)"
-        (mouseup)="!isDragged || stopDragging($event)"
-        (mouseleave)="!isDragged || stopDragging($event)"
+        (mousemove)="!isMouseDown || continueDragging($event)"
+        (mouseup)="!isMouseDown || stopDragging($event)"
+        (mouseleave)="!isMouseDown || stopDragging($event)"
         (wheel)="changeScale($event)">
 </canvas>
+<div #pointer *ngIf="pointerX && pointerY" [style.left]="pointerX + 'px'" [style.top]="pointerY + 'px'" class="pointer"></div>
